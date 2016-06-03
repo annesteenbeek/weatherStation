@@ -19,6 +19,7 @@
     <h3>Temperature: {{ temp.get("temp") }} C</h3>
     <h3>Rain: {{weather.get_rain()</h3>
     <h3 id="flow">Flow: 0 L</h3>
+    <h3 id="timeOn">0.0 minutes left</h3><!-- /#timeOn -->
 
     <form id="sprinklerForm" class="form-inline">
       <div class="form-group">
@@ -48,17 +49,23 @@
     });
 
     socket.on('getSprinkler', function(msg) {
-      sprinklerState =  msg.state;
-      time = msg.time;
+      sprinklerState =  msg.state; // boolean if sprinkler is on
+      stopTime = msg.time; // UNIX timestamp for when it will be closed in seconds
+      var d = new Date();
+      var curTime = Date.now()/1000;
+      var timeLeft = Math.round((stopTime - curTime)*10/60)/10; // time left in minutes
       $("#sprinklerButton").toggleClass("btn-danger", sprinklerState);
       $("#sprinklerTimer").prop("disabled", sprinklerState);
-      // $('.Timer').text((new Date - start) / 1000 + " Seconds");
-      console.log("sprinkler state: " + sprinklerState)
+      $("#timeOn").text(timeLeft + " minutes left");
     });
 
     socket.on('passFlow', function(liters) {
         // $("#flow").text("Flow: " + liters +"L");
     });
+
+    socket.on('invalidInput', function(msg) {
+      alert("This is not a valid input: " + msg['error']);
+    })
 
     $("#sprinklerForm").submit(function(event) {
         var timer = $("#sprinklerTimer").val();
@@ -72,8 +79,8 @@
     });
 
     // check for new values every 100ms
-    setInterval(function() {
-        if (sprinklerState) {
+    window.setInterval(function() {
+        if (socket.socket.connected) { // only check if connected
           socket.emit('getSprinkler');
           socket.emit('getFlow');
       }
