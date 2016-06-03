@@ -23,15 +23,8 @@ lon = 6.847556
 flowPinState = False 
 shutdownTime = time.time() # unix timestamp on when to close flow
 requestTimeout = 10 # only request api every x mins
-startTime
-stopTime
-
-
-def should_flow_close():
-    if (shutdownTime > currentTime): # it's time to shut down
-        if (flowPinState): # pin is not already low
-            # set pin to low
-            flowPinState = False
+startTime = 0
+stopTime = 0
 
 
 def should_flow_start():
@@ -43,7 +36,8 @@ def should_flow_start():
 def get_weather():
     global weather, lastRequestTime # make object global so they can be accessed by client template
     now = time.time()
-    if (lastRequestTime =< now - requestTimeout * 60 * 60):
+
+    if (lastRequestTime <= now - requestTimeout * 60 * 60):
         observation = owm.weather_at_coords(lat,lon)
         weather = observation.get_weather()
         lastRequestTime = now
@@ -51,9 +45,8 @@ def get_weather():
 
 def flow_loop():
     while True:
-        should_flow_close()
         should_flow_start()
-        if (shutdownTime =< currentTime):
+        if (shutdownTime <= currentTime):
             flowPinState = True
         else: 
             flowPinState = False
@@ -82,7 +75,8 @@ def init_message():
     sendSprinkler()
 
 @socketio.on('getSprinkler')
-sendSprinkler()
+def returnSprinkler():
+    sendSprinkler()
 
 @socketio.on('setSprinkler')
 def handle_message(message):
@@ -96,7 +90,7 @@ def handle_message(message):
 def send_flow():
     emit('passFlow', {'flow': flowLiters})
 
-
+print(time.strftime("%H"))
 
 
 # while __name__=='__main__':
