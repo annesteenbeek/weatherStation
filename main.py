@@ -15,18 +15,17 @@ if (not db.has_key('flowLiters')):
     db['flowLiters'] = 0 
 
 
-requestTimeout = 10 # only request api every x mins
 lastRequestTime = time.time()
 # set location 
 lat = 52.246712
 lon = 6.847556
 
-# print temp.get("temp")
-# print  weather.get_rain()
-
 flowPinState = False 
 shutdownTime = time.time() # unix timestamp on when to close flow
-flowLiters = 0
+requestTimeout = 10 # only request api every x mins
+startTime
+stopTime
+
 
 def should_flow_close():
     if (shutdownTime > currentTime): # it's time to shut down

@@ -18,7 +18,7 @@
   <div class="container">
     <h3>Temperature: {{ temp.get("temp") }} C</h3>
     <h3>Rain: {{weather.get_rain()</h3>
-    <!-- <h3 id="flow">Flow: 0 L</h3> -->
+    <h3 id="flow">Flow: 0 L</h3>
 
     <form id="sprinklerForm" class="form-inline">
       <div class="form-group">
@@ -50,12 +50,10 @@
     socket.on('getSprinkler', function(msg) {
       sprinklerState =  msg.state;
       time = msg.time;
-        if (sprinklerState) { // Sprinkler is on
-            // startTimer (time);
-        };
-        $("#sprinklerButton").toggleClass("btn-danger", sprinklerState);
-        $("#sprinklerTimer").prop("disabled", sprinklerState);
-        console.log("sprinkler state: " + sprinklerState)
+      $("#sprinklerButton").toggleClass("btn-danger", sprinklerState);
+      $("#sprinklerTimer").prop("disabled", sprinklerState);
+      // $('.Timer').text((new Date - start) / 1000 + " Seconds");
+      console.log("sprinkler state: " + sprinklerState)
     });
 
     socket.on('passFlow', function(liters) {
@@ -73,15 +71,15 @@
         event.preventDefault();
     });
 
-    // startTimer = function(time) {
-    //     setInterval(function() {
-    //         $('.Timer').text((new Date - start) / 1000 + " Seconds");
-    //     }, 1000);
-    // }
+    // check for new values every 100ms
+    setInterval(function() {
+        if (sprinklerState) {
+          socket.emit('getSprinkler');
+          socket.emit('getFlow');
+      }
+    }, 100);
 
-    // setInterval(function() {
-    //   socket.emit('getFlow');
-    // }, 100)
+
 
   </script>
 </body>
