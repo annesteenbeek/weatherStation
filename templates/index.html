@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather station</title>
+   <!-- CDN -->
+   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+  <style>
+  </style>
+
+</head>
+<body>
+  <div class="jumbotron">
+    <h1>Villa weather control</h1>
+  </div><!-- /.jumbotron -->
+  <div class="container">
+    <h3>Temperature: {{ temp.get("temp") }} C</h3>
+    <h3>Rain: {{weather.get_rain()</h3>
+    <!-- <h3 id="flow">Flow: 0 L</h3> -->
+
+    <form id="sprinklerForm" class="form-inline">
+      <div class="form-group">
+        <label for="sprinklerTimer">Timer (mins)</label>
+        <input type="number" class="form-control" id="sprinklerTimer" value="5"></input>
+      </div><!-- /.form-group -->
+      <button class="btn btn-success" id="sprinklerButton" type="submit">Sprinkler</button>
+    </form><!-- /.form-inline -->
+
+  </div><!-- /.container -->
+  <!-- CDN -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+
+  <script>
+    'use strict';
+
+    var socket = io.connect();
+    var sprinklerState = false;
+    var time = 0;
+
+    socket.on('connect', function() {
+      console.log("connected to server");
+      socket.emit('connected');
+    });
+
+    socket.on('getSprinkler', function(msg) {
+      sprinklerState =  msg.state;
+      time = msg.time;
+        if (sprinklerState) { // Sprinkler is on
+            // startTimer (time);
+        };
+        $("#sprinklerButton").toggleClass("btn-danger", sprinklerState);
+        $("#sprinklerTimer").prop("disabled", sprinklerState);
+        console.log("sprinkler state: " + sprinklerState)
+    });
+
+    socket.on('passFlow', function(liters) {
+        // $("#flow").text("Flow: " + liters +"L");
+    });
+
+    $("#sprinklerForm").submit(function(event) {
+        var timer = $("#sprinklerTimer").val();
+        var msg = {
+            state: !sprinklerState,
+            time: timer
+            };
+        socket.emit('setSprinkler', msg);
+        console.log("sending state: " + msg.state);
+        event.preventDefault();
+    });
+
+    // startTimer = function(time) {
+    //     setInterval(function() {
+    //         $('.Timer').text((new Date - start) / 1000 + " Seconds");
+    //     }, 1000);
+    // }
+
+    // setInterval(function() {
+    //   socket.emit('getFlow');
+    // }, 100)
+
+  </script>
+</body>
+</html>
