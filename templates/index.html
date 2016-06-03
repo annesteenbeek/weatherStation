@@ -16,10 +16,10 @@
     <h1>Villa weather control</h1>
   </div><!-- /.jumbotron -->
   <div class="container">
-    <h3>Temperature: {{ temp.get("temp") }} C</h3>
-    <h3>Rain: {{weather.get_rain()</h3>
+    <h3>Temperature: {{ weather.get_temperature('celsius').get("temp") }} C</h3>
+    <h3>Rain: {{ weather.get_rain() }}</h3>
     <h3 id="flow">Flow: 0 L</h3>
-    <h3 id="timeOn">0.0 minutes left</h3><!-- /#timeOn -->
+    <h3 id="timeOn">0 minutes and 0 seconds left</h3><!-- /#timeOn -->
 
     <form id="sprinklerForm" class="form-inline">
       <div class="form-group">
@@ -46,17 +46,30 @@
     socket.on('connect', function() {
       console.log("connected to server");
       socket.emit('connected');
+      // check for new values every 100ms
+      window.setInterval(function() {
+          socket.emit('getSprinkler');
+          socket.emit('getFlow');
+      }, 100);
     });
 
     socket.on('getSprinkler', function(msg) {
       sprinklerState =  msg.state; // boolean if sprinkler is on
-      stopTime = msg.time; // UNIX timestamp for when it will be closed in seconds
-      var d = new Date();
-      var curTime = Date.now()/1000;
-      var timeLeft = Math.round((stopTime - curTime)*10/60)/10; // time left in minutes
       $("#sprinklerButton").toggleClass("btn-danger", sprinklerState);
       $("#sprinklerTimer").prop("disabled", sprinklerState);
-      $("#timeOn").text(timeLeft + " minutes left");
+      if (sprinklerState) {
+        var stopTime = msg.time; // UNIX timestamp for when it will be closed in seconds
+        var d = new Date();
+        var curTime = Date.now()/1000;
+        var timeDiff = stopTime - curTime; // in seconds
+        var minutes = Math.floor( timeDiff / 60); // time left in minutes
+        var seconds = Math.round(timeDiff - minutes * 60);
+        $("#timeOn").text(minutes + " minutes and " + seconds + " seconds left");
+      } else {
+        $("#timeOn").text("0 minutes and 0 seconds left");
+
+      }
+      console.log("received sprinkler state: " + sprinklerState)
     });
 
     socket.on('passFlow', function(liters) {
@@ -78,13 +91,7 @@
         event.preventDefault();
     });
 
-    // check for new values every 100ms
-    window.setInterval(function() {
-        if (socket.socket.connected) { // only check if connected
-          socket.emit('getSprinkler');
-          socket.emit('getFlow');
-      }
-    }, 100);
+
 
 
 
