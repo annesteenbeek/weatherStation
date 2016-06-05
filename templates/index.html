@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,6 @@
   <title>Weather station</title>
    <!-- CDN -->
    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
-
   <style>
   </style>
 
@@ -19,6 +18,7 @@
     <h3>Temperature: {{ weather.get_temperature('celsius').get("temp") }} C</h3>
     <h3>Rain: {{ weather.get_rain() }}</h3>
     <h3 id="flow">Flow: 0 L</h3>
+    <h3 id="flowSpeed">Flow speed: 0 L/minute</h3>
     <h3 id="timeOn">0 minutes and 0 seconds left</h3><!-- /#timeOn -->
 
     <form id="sprinklerForm" class="form-inline">
@@ -73,7 +73,12 @@
     });
 
     socket.on('passFlow', function(msg) {
-        $("#flow").text("Flow: " + msg['flow'] +"L");
+        var liters = msg['flow'];
+        var flowSpeed = msg['flowSpeed'];
+        liters = Math.round(liters * 10) / 10;
+        flowSpeed = Math.round(flowSpeed * 10) / 10;
+        $("#flow").text("Flow: " + liters +"L");
+        $("#flowSpeed").text("Flow speed: " + flowSpeed + " L/minute");
     });
 
     socket.on('invalidInput', function(msg) {
@@ -90,11 +95,6 @@
         console.log("sending state: " + msg.state);
         event.preventDefault();
     });
-
-
-
-
-
   </script>
 </body>
 </html>

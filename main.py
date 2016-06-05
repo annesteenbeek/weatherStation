@@ -9,7 +9,6 @@ import numbers
 import decimal
 import RPi.GPIO as GPIO
 
-
 owm = pyowm.OWM('8cb7e0fcf5a41cd34812845fd6aa876e')  # from https://home.openweathermap.org/api_keys
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -18,7 +17,12 @@ db = shelve.open('database.db')
 
 # create db entry if it does not yet exist
 if (not db.has_key('flowLiters')):
-    db['flowLiters'] = 0 
+    db['flowLiters'] = 0
+    db['sprinklerInterval'] = 50 # mins wait time to turn sprinkler on
+    db['sprinklerTime'] = 10 # mins of sprinkler to be turned on
+    db['minTemp'] = 21
+    db['startTime'] = 6
+    db['stopTime'] = 19
 
 # set location 
 lat = 52.246712
@@ -27,11 +31,6 @@ lon = 6.847556
 flowPinState = False 
 shutdownTime = time.time() # unix timestamp on when to close flow
 requestTimeout = 10 # only request api every x mins
-sprinklerInterval = 50 # mins between sprinkler states
-sprinklerTime = 10 # mins of sprinkler to be turend on
-minTemp = 21
-startTime = 6
-stopTime = 19
 
 # set GPIO pins
 GPIO.setmode(GPIO.BCM) # use GPIO numbers not pin numbers
@@ -74,15 +73,18 @@ def should_flow_start():
     rain = weather.get_rain()
     temp = weather.get_temperature('celsius').get("temp")
     hourOfDay = time.strftime("%H")
+    startTime = db['startTime']
+    stopTime = db['stopTime']
+    minTemp = db['minTemp']
+    sprinklerInterval = db['sprinklerInterval']
+    sprinklerTime = db['sprinklerTime']
+
     if ((hourOfDay >= startTime) and (hourOfDay < stopTime)): # inside day range
         if (time.time() >= shutdownTime + sprinklerInterval * 60 ):
             #TODO make sure rain is about to fall within x minutes
             if (not rain): # make sure it's not already raining (or about to rain)
                 if (temp >= minTemp):
                     shutdownTime = time.time() + sprinklerTime * 60 # set new shutdown time in future
-                    #TODO write to database
-
-
 
 def switch_loop():
     global flowPinState
@@ -101,10 +103,9 @@ def flow_loop():
     global flowRate, db
     prevPulses = flowRateCount
     while True:
-        rate = (flowRateCount - prevPulses) / flowFactor # flow in litre/min
+        flowRate = (flowRateCount - prevPulses) / flowFactor # flow in litre/min
         prevPulses = flowRateCount
-        totalFlow  = db['flowLiters'] + rate / 60 # increment liters by 1/60th of the flowRate
-        print("Total liters passed: " + str(totalFlow))
+        totalFlow  = db['flowLiters'] + flowRate / 60 # increment liters by 1/60th of the flowRate
         db['flowLiters'] = totalFlow
         time.sleep(1)
 
@@ -137,6 +138,34 @@ def index():
 def init_message():
     sendSprinkler()
 
+@socketio.on('getSettings')
+def getSettings():
+    msg = {'sprinklerInterval': db['sprinklerInterval'],
+            'sprinklerTime': db['sprinklerTime'],
+            'minTemp': db['minTemp'],
+            'startTime': db['startTime'],
+            'stopTime': db['stopTime']
+        }
+    emit('getSettings', msg)
+
+@socketio.on('setSettings')
+def setSettings(msg):
+    try:
+      sprinklerInterval = float(msg['sprinklerInterval'])
+      sprinklerTime = float(msg['sprinklerTime'])
+      minTemp = float(msg['minTemp'])
+      startTime = float(msg['startTime'])
+      stopTime = float(msg['stopTime'])
+      if startTime > stopTime and startTime > 0 and startTime <= 24 and stopTime > 0 and stopTime < 24:
+        db['sprinklerInterval'] = sprinklerInterval
+        db['sprinklerTime'] = sprinklerTime
+        db['minTemp'] = minTemp
+        db['startTime'] = startTime
+        db['stopTime'] = stopTime
+    except:
+        print("contained wrong filetype")
+
+
 @socketio.on('getSprinkler')
 def returnSprinkler():
     sendSprinkler()
@@ -168,7 +197,10 @@ def handle_message(message):
 
 @socketio.on('getFlow')
 def send_flow():
-    emit('passFlow', {'flow': db['flowLiters']})
+    msg = {'flow': db['flowLiters'],
+           'flowSpeed': flowRate
+        }
+    emit('passFlow', msg)
 
 # ------------- Main ---------------
 
