@@ -168,6 +168,7 @@ def setSettings(msg):
         db['startTime'] = startTime
         db['stopTime'] = stopTime
         getSettings()
+        print("Setting new settings")
     except:
         print("contained wrong filetype")
 
