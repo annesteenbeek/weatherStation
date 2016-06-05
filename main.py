@@ -7,6 +7,8 @@ from threading import Thread
 import types
 import numbers
 import decimal
+import RPi.GPIO as GPIO
+
 
 owm = pyowm.OWM('8cb7e0fcf5a41cd34812845fd6aa876e')  # from https://home.openweathermap.org/api_keys
 app = Flask(__name__)
@@ -17,7 +19,6 @@ db = shelve.open('database.db')
 # create db entry if it does not yet exist
 if (not db.has_key('flowLiters')):
     db['flowLiters'] = 0 
-
 
 # set location 
 lat = 52.246712
@@ -31,6 +32,25 @@ sprinklerTime = 10 # mins of sprinkler to be turend on
 minTemp = 21
 startTime = 6
 stopTime = 19
+
+# set GPIO pins
+GPIO.setmode(GPIO.BCM) # use GPIO numbers not pin numbers
+flowPin = 18 # the GPIO pin number for the flow valve controller
+ratePin = 24 # the GPIO pin that receives flow meter interrupts
+
+# set up flow rate counter
+flowFactor = 4.5 # pulses/sec per litre/minute of flow
+flowRate = 0
+flowRateCount = 0
+def increment_flow_count(channel):
+    global flowRateCount
+    flowRateCount = flowRateCount + 1
+
+
+GPIO.setup(flowPin, GPIO.OUT)
+GPIO.output(flowPin, flowPinState)
+GPIO.setup(ratePin, GPIO.IN)
+GPIO.add_event_detect(ratePin, GPIO.FALLING, callback=increment_flow_count)
 
 # set initial values
 observation = owm.weather_at_coords(lat,lon)
@@ -49,6 +69,7 @@ def get_weather():
         lastRequestTime = now
 
 def should_flow_start():
+    global shutdownTime
     get_weather()
     rain = weather.get_rain()
     temp = weather.get_temperature('celsius').get("temp")
@@ -64,26 +85,33 @@ def should_flow_start():
 
 
 def switch_loop():
+    global flowPinState
     while True:
         should_flow_start()
-        if (shutdownTime <= time.time()):
+        if (shutdownTime > time.time()):
             flowPinState = True
         else: 
             flowPinState = False
-        # write pinstate
+        GPIO.output(flowPin, flowPinState)
         time.sleep(1)
 
 # ------- Flow meter -----------
 
 def flow_loop():
-    h=1
-
+    global flowRate, db
+    prevPulses = flowRateCount
+    while True:
+        rate = (flowRateCount - prevPulses) / flowFactor # flow in litre/min
+        prevPulses = flowRateCount
+        totalFlow  = db['flowLiters'] + rate / 60 # increment liters by 1/60th of the flowRate
+        print("Total liters passed: " + str(totalFlow))
+        db['flowLiters'] = totalFlow
+        time.sleep(1)
 
 
 # ---------------- WEB ------------------
 
 def sendSprinkler():
-    print("sending pin state: " + str(flowPinState))
     emit('getSprinkler', {'state': flowPinState, 'time': shutdownTime})
 
 def setSprinkler(state, interval):
@@ -145,7 +173,7 @@ def send_flow():
 # ------------- Main ---------------
 
 if __name__=='__main__':
-    webThread = Thread(target=socketio.run, args=(app, ) )
+    webThread = Thread(target=socketio.run, args=(app, '0.0.0.0') )
     webThread.setDaemon(True)
     webThread.start()
 

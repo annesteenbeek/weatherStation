@@ -72,8 +72,8 @@
       console.log("received sprinkler state: " + sprinklerState)
     });
 
-    socket.on('passFlow', function(liters) {
-        // $("#flow").text("Flow: " + liters +"L");
+    socket.on('passFlow', function(msg) {
+        $("#flow").text("Flow: " + msg['flow'] +"L");
     });
 
     socket.on('invalidInput', function(msg) {

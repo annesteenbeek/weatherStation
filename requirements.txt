@@ -1,16 +1,4 @@
 Flask == 0.11
 Flask_SocketIO == 2.4
-lxml == 3.3.3
-pyasn1 == 0.1.9
 pyowm == 2.3.1
-pyOpenSSL == 16.0.0
-Pyrex == 0.9.4.1
-backports.functools_lru_cache == 1.2.1
-Genshi == 0.7
-java == 0.0.1
-ndg_httpsclient == 0.4.0
-nt == 0.0.0
-ordereddict == 1.1
-org == 1.0.0
-simplejson == 3.8.2
-wincertstore == 0.2
+
