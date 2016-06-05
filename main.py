@@ -79,19 +79,11 @@ def should_flow_start():
     sprinklerInterval = db['sprinklerInterval']
     sprinklerTime = db['sprinklerTime']
     
-    print("checking if sprinkler should be turned on")
-    print("temperature: " + str(temp))
-    print("min temp: " + str(minTemp))
-    print(str(temp >= minTemp))
     if ((hourOfDay >= startTime) and (hourOfDay < stopTime)): # inside day range
-        print("within hour of day")
         if (time.time() >= shutdownTime + sprinklerInterval * 60 ):
-            print("long enough ago since last sprinkle")
             #TODO make sure rain is about to fall within x minutes
             if (not rain): # make sure it's not already raining (or about to rain)
-                print("not raining")
                 if (temp >= minTemp):
-                    print("setting new shutdown time")
                     shutdownTime = time.time() + sprinklerTime * 60 # set new shutdown time in future
 
 def switch_loop():
