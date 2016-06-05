@@ -130,15 +130,6 @@ def setSprinkler(state, interval):
     #TODO write shutdown time to db
     sendSprinkler() # return new state to client
 
-@app.route('/')
-def index():
-    return render_template('index.html',weather=weather)
-
-@socketio.on('connect')
-def init_message():
-    sendSprinkler()
-
-@socketio.on('getSettings')
 def getSettings():
     msg = {'sprinklerInterval': db['sprinklerInterval'],
             'sprinklerTime': db['sprinklerTime'],
@@ -147,6 +138,20 @@ def getSettings():
             'stopTime': db['stopTime']
         }
     emit('getSettings', msg)
+    print("sending settings")
+
+@app.route('/')
+def index():
+    return render_template('index.html',weather=weather)
+
+@socketio.on('connect')
+def init_message():
+    sendSprinkler()
+    getSettings()
+
+@socketio.on('getSettings')
+def sendSettings():
+    getSettings()
 
 @socketio.on('setSettings')
 def setSettings(msg):
@@ -162,6 +167,7 @@ def setSettings(msg):
         db['minTemp'] = minTemp
         db['startTime'] = startTime
         db['stopTime'] = stopTime
+        getSettings()
     except:
         print("contained wrong filetype")
 

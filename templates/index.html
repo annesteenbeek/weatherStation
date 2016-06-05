@@ -52,7 +52,7 @@
           <label>Stop Time</label>
           <input type="number" id="stopTime" />
         </div><!-- /.form-group --> 
-        <button class="btn btn-default" id="settingsButton" type="submit">set Settings</button>
+        <button class="btn btn-primary" id="settingsButton" type="submit">set Settings</button>
       </form>
     </div><!-- /.container -->
 
@@ -74,6 +74,7 @@
     socket.on('connect', function() {
       console.log("connected to server");
       socket.emit('connected');
+      socket.emit('getSettings');
       // check for new values every 100ms
       window.setInterval(function() {
           socket.emit('getSprinkler');
@@ -130,6 +131,8 @@
       $("#minTemp").text(msg['minTemp']);
       $("#startTime").text(msg['startTime']);
       $("#stopTime").text(msg['stopTime']);
+      console.log("received settings");
+      console.log(msg);
     });
 
     $("#settingsForm").submit(function(event){
