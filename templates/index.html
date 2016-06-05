@@ -11,10 +11,10 @@
 
 </head>
 <body>
-  <div class="jumbotron">
-    <h1>Villa weather control</h1>
-  </div><!-- /.jumbotron -->
   <div class="container">
+    <div class="jumbotron">
+      <h1>Villa weather control</h1>
+    </div><!-- /.jumbotron -->
     <h3>Temperature: {{ weather.get_temperature('celsius').get("temp") }} C</h3>
     <h3>Rain: {{ weather.get_rain() }}</h3>
     <h3 id="flow">Flow: 0 L</h3>
@@ -28,36 +28,36 @@
       </div><!-- /.form-group -->
       <button class="btn btn-success" id="sprinklerButton" type="submit">Sprinkler</button>
     </form><!-- /.form-inline -->
-    <hr />
-
-    <div class="container">
-      <form id="settingsForm">
-        <div class="form-group">
-          <label>Sprinkler Interval</label>
-          <input type="number" id="sprinklerInterval" />
-        </div><!-- /.form-group -->
-        <div class="form-group">
-          <label>Sprinkler Time</label>
-          <input type="number" id="sprinklerTime" />
-        </div><!-- /.form-group --> 
-        <div class="form-group">
-          <label>Minimum Temperature</label>
-          <input type="number" id="minTemp" />
-        </div><!-- /.form-group --> 
-        <div class="form-group">
-          <label>Start time</label>
-          <input type="number" id="startTime" />
-        </div><!-- /.form-group --> 
-        <div class="form-group">
-          <label>Stop Time</label>
-          <input type="number" id="stopTime" />
-        </div><!-- /.form-group --> 
-        <button class="btn btn-primary" id="settingsButton" type="submit">set Settings</button>
-      </form>
-    </div><!-- /.container -->
-
-
   </div><!-- /.container -->
+  
+  <hr />
+
+  <div class="container">
+    <form id="settingsForm">
+      <div class="form-group">
+        <label>Sprinkler Interval</label>
+        <input class="form-control" type="number" id="sprinklerInterval" />
+      </div><!-- /.form-group -->
+      <div class="form-group">
+        <label>Sprinkler Time</label>
+        <input class="form-control" type="number" id="sprinklerTime" />
+      </div><!-- /.form-group --> 
+      <div class="form-group">
+        <label>Minimum Temperature</label>
+        <input class="form-control" type="number" id="minTemp" />
+      </div><!-- /.form-group --> 
+      <div class="form-group">
+        <label>Start time</label>
+        <input class="form-control" type="number" id="startTime" />
+      </div><!-- /.form-group --> 
+      <div class="form-group">
+        <label>Stop Time</label>
+        <input class="form-control" type="number" id="stopTime" />
+      </div><!-- /.form-group --> 
+      <button class="btn btn-primary" id="settingsButton" type="submit">set Settings</button>
+    </form>
+  </div><!-- /.container -->
+
   <!-- CDN -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
   <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
@@ -126,11 +126,11 @@
     });
 
     socket.on('getSettings', function(msg) {
-      $("#sprinklerInterval").text(msg['sprinklerInterval']);
-      $("#sprinklerTime").text(msg['sprinklerTime']);
-      $("#minTemp").text(msg['minTemp']);
-      $("#startTime").text(msg['startTime']);
-      $("#stopTime").text(msg['stopTime']);
+      $("#sprinklerInterval").val(msg['sprinklerInterval']);
+      $("#sprinklerTime").val(msg['sprinklerTime']);
+      $("#minTemp").val(msg['minTemp']);
+      $("#startTime").val(msg['startTime']);
+      $("#stopTime").val(msg['stopTime']);
       console.log("received settings");
       console.log(msg);
     });
