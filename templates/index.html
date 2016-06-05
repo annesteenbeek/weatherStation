@@ -28,6 +28,34 @@
       </div><!-- /.form-group -->
       <button class="btn btn-success" id="sprinklerButton" type="submit">Sprinkler</button>
     </form><!-- /.form-inline -->
+    <hr />
+
+    <div class="container">
+      <form id="settingsForm">
+        <div class="form-group">
+          <label>Sprinkler Interval</label>
+          <input type="number" id="sprinklerInterval" />
+        </div><!-- /.form-group -->
+        <div class="form-group">
+          <label>Sprinkler Time</label>
+          <input type="number" id="sprinklerTime" />
+        </div><!-- /.form-group --> 
+        <div class="form-group">
+          <label>Minimum Temperature</label>
+          <input type="number" id="minTemp" />
+        </div><!-- /.form-group --> 
+        <div class="form-group">
+          <label>Start time</label>
+          <input type="number" id="startTime" />
+        </div><!-- /.form-group --> 
+        <div class="form-group">
+          <label>Stop Time</label>
+          <input type="number" id="stopTime" />
+        </div><!-- /.form-group --> 
+        <button class="btn btn-default" id="settingsButton" type="submit">set Settings</button>
+      </form>
+    </div><!-- /.container -->
+
 
   </div><!-- /.container -->
   <!-- CDN -->
@@ -95,6 +123,28 @@
         console.log("sending state: " + msg.state);
         event.preventDefault();
     });
+
+    socket.on('getSettings', function(msg) {
+      $("#sprinklerInterval").text(msg['sprinklerInterval']);
+      $("#sprinklerTime").text(msg['sprinklerTime']);
+      $("#minTemp").text(msg['minTemp']);
+      $("#startTime").text(msg['startTime']);
+      $("#stopTime").text(msg['stopTime']);
+    });
+
+    $("#settingsForm").submit(function(event){
+      var msg = {
+        sprinklerInterval: $("#sprinklerInterval").val(),
+        sprinklerTime: $("#sprinklerTime").val(),
+        minTemp: $("#minTemp").val(),
+        startTime: $("#startTime").val(),
+        stopTime: $("#stopTime").val()
+      };
+      socket.emit('setSettings', msg);
+      console.log("sending settings");
+      console.log(msg);
+      event.preventDefault();
+    })
   </script>
 </body>
 </html>
