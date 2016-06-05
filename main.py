@@ -71,19 +71,27 @@ def should_flow_start():
     global shutdownTime
     get_weather()
     rain = weather.get_rain()
-    temp = weather.get_temperature('celsius').get("temp")
-    hourOfDay = time.strftime("%H")
+    temp = float(weather.get_temperature('celsius').get("temp"))
+    hourOfDay = float(time.strftime("%H"))
     startTime = db['startTime']
     stopTime = db['stopTime']
     minTemp = db['minTemp']
     sprinklerInterval = db['sprinklerInterval']
     sprinklerTime = db['sprinklerTime']
-
+    
+    print("checking if sprinkler should be turned on")
+    print("temperature: " + str(temp))
+    print("min temp: " + str(minTemp))
+    print(str(temp >= minTemp))
     if ((hourOfDay >= startTime) and (hourOfDay < stopTime)): # inside day range
+        print("within hour of day")
         if (time.time() >= shutdownTime + sprinklerInterval * 60 ):
+            print("long enough ago since last sprinkle")
             #TODO make sure rain is about to fall within x minutes
             if (not rain): # make sure it's not already raining (or about to rain)
+                print("not raining")
                 if (temp >= minTemp):
+                    print("setting new shutdown time")
                     shutdownTime = time.time() + sprinklerTime * 60 # set new shutdown time in future
 
 def switch_loop():
@@ -155,13 +163,14 @@ def sendSettings():
 
 @socketio.on('setSettings')
 def setSettings(msg):
+    global db
     try:
       sprinklerInterval = float(msg['sprinklerInterval'])
       sprinklerTime = float(msg['sprinklerTime'])
       minTemp = float(msg['minTemp'])
       startTime = float(msg['startTime'])
       stopTime = float(msg['stopTime'])
-      if startTime > stopTime and startTime > 0 and startTime <= 24 and stopTime > 0 and stopTime < 24:
+      if startTime < stopTime:
         db['sprinklerInterval'] = sprinklerInterval
         db['sprinklerTime'] = sprinklerTime
         db['minTemp'] = minTemp
@@ -169,6 +178,8 @@ def setSettings(msg):
         db['stopTime'] = stopTime
         getSettings()
         print("Setting new settings")
+      else:
+        print("startTime not more then Stoptime")
     except:
         print("contained wrong filetype")
 
