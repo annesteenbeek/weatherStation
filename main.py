@@ -15,7 +15,7 @@ owm = pyowm.OWM('8cb7e0fcf5a41cd34812845fd6aa876e')  # from https://home.openwea
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
-db = shelve.open('database.db')
+db = shelve.open('./database.db')
 
 # create db entry if it does not yet exist
 if (not db.has_key('flowLiters')):
@@ -96,7 +96,7 @@ def switch_loop():
             flowPinState = True
         else: 
             flowPinState = False
-        GPIO.output(flowPin, flowPinState)
+        GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
         time.sleep(1)
 
 # ------- Flow meter -----------

@@ -79,7 +79,7 @@
       window.setInterval(function() {
           socket.emit('getSprinkler');
           socket.emit('getFlow');
-      }, 100);
+      }, 1000);
     });
 
     socket.on('getSprinkler', function(msg) {
