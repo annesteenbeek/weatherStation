@@ -176,7 +176,7 @@ def setSettings(msg):
       _minTemp = float(msg['minTemp'])
       _startTime = float(msg['startTime'])
       _stopTime = float(msg['stopTime'])
-      if _startTime > _stopTime and _startTime > 0 and _startTime <= 24 and _stopTime > 0 and _stopTime < 24:
+      if _startTime < _stopTime and _startTime > 0 and _startTime <= 24 and _stopTime > 0 and _stopTime < 24:
         sprinklerInterval = _sprinklerInterval
         sprinklerTime = _sprinklerTime
         minTemp = _minTemp
@@ -185,7 +185,7 @@ def setSettings(msg):
         getSettings()
         print("Setting new settings")
       else:
-        print("startTime not more then Stoptime")
+        print("startTime later then Stoptime")
     except:
         print("contained wrong filetype")
 
