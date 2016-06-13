@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from flask import Flask, render_template
 import pyowm
 from flask_socketio import SocketIO, emit
@@ -99,7 +101,7 @@ def switch_loop():
             flowPinState = True
         else: 
             flowPinState = False
-        GPIO.output(flowPin, flowPinState)
+        GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
         time.sleep(1)
 
 # ------- Flow meter -----------
@@ -182,6 +184,8 @@ def setSettings(msg):
         stopTime = _stopTime
         getSettings()
         print("Setting new settings")
+      else:
+        print("startTime not more then Stoptime")
     except:
         print("contained wrong filetype")
 
