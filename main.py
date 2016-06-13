@@ -16,16 +16,23 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
+# defaults
+flowLiters = 0
+sprinklerInterval = 50
+sprinklerTime = 10
+minTemp = 21
+startTime = 6
+stopTime = 19
 
-db = shelve.open('database.db', writeback=True)
+db = shelve.open('database.db')
 # create db entry if it does not yet exist
 if (not db.has_key('flowLiters')):
-    db['flowLiters'] = 0
-    db['sprinklerInterval'] = 50 # mins wait time to turn sprinkler on
-    db['sprinklerTime'] = 10 # mins of sprinkler to be turned on
-    db['minTemp'] = 21
-    db['startTime'] = 6
-    db['stopTime'] = 19
+    db['flowLiters'] = flowLiters
+    db['sprinklerInterval'] = sprinklerInterval # mins wait time to turn sprinkler on
+    db['sprinklerTime'] = sprinklerTime # mins of sprinkler to be turned on
+    db['minTemp'] = minTemp
+    db['startTime'] = startTime
+    db['stopTime'] = stopTime
 else:
     flowLiters = db['flowLiters']
     sprinklerInterval = db['sprinklerInterval']
@@ -33,7 +40,6 @@ else:
     minTemp = db['minTemp']
     startTime = db['startTime']
     stopTime = db['stopTime']
-db.sync()
 db.close()
 
 # set location 
@@ -56,7 +62,6 @@ flowRateCount = 0
 def increment_flow_count(channel):
     global flowRateCount
     flowRateCount = flowRateCount + 1
-
 
 GPIO.setup(flowPin, GPIO.OUT)
 GPIO.output(flowPin, flowPinState)
@@ -117,11 +122,19 @@ def flow_loop():
         prevPulses = flowRateCount
         flowLiters  = flowLiters + flowRate / 60 # increment liters by 1/60th of the flowRate
         if prevStore + dbStoreInterval < time.time():
-            db = shelve.open('database.db', writeback=True)
-            db.sync()
-            db.close()
+            store_in_db()
             prevStore = time.time()
         time.sleep(1)
+
+def store_in_db():
+    db = shelve.open('database.db')
+    db['flowLiters'] = flowLiters
+    db['sprinklerInterval'] = sprinklerInterval # mins wait time to turn sprinkler on
+    db['sprinklerTime'] = sprinklerTime # mins of sprinkler to be turned on
+    db['minTemp'] = minTemp
+    db['startTime'] = startTime
+    db['stopTime'] = stopTime
+    db.close()
 
 
 # ---------------- WEB ------------------
