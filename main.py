@@ -13,8 +13,9 @@ owm = pyowm.OWM('8cb7e0fcf5a41cd34812845fd6aa876e')  # from https://home.openwea
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
-db = shelve.open('database.db')
 
+
+db = shelve.open('database.db', writeback=True)
 # create db entry if it does not yet exist
 if (not db.has_key('flowLiters')):
     db['flowLiters'] = 0
@@ -23,6 +24,15 @@ if (not db.has_key('flowLiters')):
     db['minTemp'] = 21
     db['startTime'] = 6
     db['stopTime'] = 19
+else:
+    flowLiters = db['flowLiters']
+    sprinklerInterval = db['sprinklerInterval']
+    sprinklerTime = db['sprinklerTime']
+    minTemp = db['minTemp']
+    startTime = db['startTime']
+    stopTime = db['stopTime']
+db.sync()
+db.close()
 
 # set location 
 lat = 52.246712
@@ -38,7 +48,7 @@ flowPin = 18 # the GPIO pin number for the flow valve controller
 ratePin = 24 # the GPIO pin that receives flow meter interrupts
 
 # set up flow rate counter
-flowFactor = 4.5 # pulses/sec per litre/minute of flow
+flowFactor = 5.3 # pulses/sec per litre/minute of flow
 flowRate = 0
 flowRateCount = 0
 def increment_flow_count(channel):
@@ -73,11 +83,6 @@ def should_flow_start():
     rain = weather.get_rain()
     temp = weather.get_temperature('celsius').get("temp")
     hourOfDay = time.strftime("%H")
-    startTime = db['startTime']
-    stopTime = db['stopTime']
-    minTemp = db['minTemp']
-    sprinklerInterval = db['sprinklerInterval']
-    sprinklerTime = db['sprinklerTime']
 
     if ((hourOfDay >= startTime) and (hourOfDay < stopTime)): # inside day range
         if (time.time() >= shutdownTime + sprinklerInterval * 60 ):
@@ -100,13 +105,20 @@ def switch_loop():
 # ------- Flow meter -----------
 
 def flow_loop():
-    global flowRate, db
+    global flowRate, flowLiters
     prevPulses = flowRateCount
+    dbStoreInterval = 10
+    prevStore = time.time() # db store timer
+
     while True:
         flowRate = (flowRateCount - prevPulses) / flowFactor # flow in litre/min
         prevPulses = flowRateCount
-        totalFlow  = db['flowLiters'] + flowRate / 60 # increment liters by 1/60th of the flowRate
-        db['flowLiters'] = totalFlow
+        flowLiters  = flowLiters + flowRate / 60 # increment liters by 1/60th of the flowRate
+        if prevStore + dbStoreInterval < time.time():
+            db = shelve.open('database.db', writeback=True)
+            db.sync()
+            db.close()
+            prevStore = time.time()
         time.sleep(1)
 
 
@@ -131,11 +143,11 @@ def setSprinkler(state, interval):
     sendSprinkler() # return new state to client
 
 def getSettings():
-    msg = {'sprinklerInterval': db['sprinklerInterval'],
-            'sprinklerTime': db['sprinklerTime'],
-            'minTemp': db['minTemp'],
-            'startTime': db['startTime'],
-            'stopTime': db['stopTime']
+    msg = {'sprinklerInterval': sprinklerInterval,
+            'sprinklerTime': sprinklerTime,
+            'minTemp': minTemp,
+            'startTime': startTime,
+            'stopTime': stopTime
         }
     emit('getSettings', msg)
     print("sending settings")
@@ -155,18 +167,19 @@ def sendSettings():
 
 @socketio.on('setSettings')
 def setSettings(msg):
+    global sprinklerInterval, sprinklerTime, minTemp, startTime, stopTime
     try:
-      sprinklerInterval = float(msg['sprinklerInterval'])
-      sprinklerTime = float(msg['sprinklerTime'])
-      minTemp = float(msg['minTemp'])
-      startTime = float(msg['startTime'])
-      stopTime = float(msg['stopTime'])
-      if startTime > stopTime and startTime > 0 and startTime <= 24 and stopTime > 0 and stopTime < 24:
-        db['sprinklerInterval'] = sprinklerInterval
-        db['sprinklerTime'] = sprinklerTime
-        db['minTemp'] = minTemp
-        db['startTime'] = startTime
-        db['stopTime'] = stopTime
+      _sprinklerInterval = float(msg['sprinklerInterval'])
+      _sprinklerTime = float(msg['sprinklerTime'])
+      _minTemp = float(msg['minTemp'])
+      _startTime = float(msg['startTime'])
+      _stopTime = float(msg['stopTime'])
+      if _startTime > _stopTime and _startTime > 0 and _startTime <= 24 and _stopTime > 0 and _stopTime < 24:
+        sprinklerInterval = _sprinklerInterval
+        sprinklerTime = _sprinklerTime
+        minTemp = _minTemp
+        startTime = _startTime
+        stopTime = _stopTime
         getSettings()
         print("Setting new settings")
     except:
@@ -204,7 +217,7 @@ def handle_message(message):
 
 @socketio.on('getFlow')
 def send_flow():
-    msg = {'flow': db['flowLiters'],
+    msg = {'flow': flowLiters,
            'flowSpeed': flowRate
         }
     emit('passFlow', msg)
