@@ -110,8 +110,8 @@ def switch_loop():
                 flowPinState = True
             else: 
                 flowPinState = False
-            GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
-            time.sleep(1)
+                GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
+                time.sleep(1)
             except Exception, e:
                 logging.debug("pin switch loop crashed because: " + e)
 
