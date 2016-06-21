@@ -248,12 +248,11 @@ def send_flow():
         }
     emit('passFlow', msg)
 
-def webLoop(){
+def webLoop():
     try:
         socketio.run(app, '0.0.0.0')
     except Exception, e:
         logging.debug("web exception: " + e)
-}
 
 # ------------- Main ---------------
 
