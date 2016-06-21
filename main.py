@@ -105,15 +105,15 @@ def switch_loop():
     global flowPinState
     while True:
         try:
-        should_flow_start()
-        if (shutdownTime > time.time()):
-            flowPinState = True
-        else: 
-            flowPinState = False
-        GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
-        time.sleep(1)
-        except Exception, e:
-            logging.debug("pin switch loop crashed because: " + e)
+            should_flow_start()
+            if (shutdownTime > time.time()):
+                flowPinState = True
+            else: 
+                flowPinState = False
+            GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
+            time.sleep(1)
+            except Exception, e:
+                logging.debug("pin switch loop crashed because: " + e)
 
 # ------- Flow meter -----------
 
@@ -258,7 +258,7 @@ def webLoop(){
 # ------------- Main ---------------
 
 if __name__=='__main__':
-    webThread = Thread(target=socketio.run, args=(app, '0.0.0.0') )
+    webThread = Thread(target=webloop)
     webThread.setDaemon(True)
     webThread.start()
 
