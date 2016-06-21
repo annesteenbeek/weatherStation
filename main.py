@@ -10,6 +10,9 @@ import types
 import numbers
 import decimal
 import RPi.GPIO as GPIO
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(relativeCreated)6d %(threadName)s %(message)s')
 
 owm = pyowm.OWM('8cb7e0fcf5a41cd34812845fd6aa876e')  # from https://home.openweathermap.org/api_keys
 app = Flask(__name__)
@@ -101,6 +104,7 @@ def should_flow_start():
 def switch_loop():
     global flowPinState
     while True:
+        try:
         should_flow_start()
         if (shutdownTime > time.time()):
             flowPinState = True
@@ -108,6 +112,8 @@ def switch_loop():
             flowPinState = False
         GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
         time.sleep(1)
+        except Exception, e:
+            logging.debug("pin switch loop crashed because: " + e)
 
 # ------- Flow meter -----------
 
@@ -127,14 +133,17 @@ def flow_loop():
         time.sleep(1)
 
 def store_in_db():
-    db = shelve.open('database.db')
-    db['flowLiters'] = flowLiters
-    db['sprinklerInterval'] = sprinklerInterval # mins wait time to turn sprinkler on
-    db['sprinklerTime'] = sprinklerTime # mins of sprinkler to be turned on
-    db['minTemp'] = minTemp
-    db['startTime'] = startTime
-    db['stopTime'] = stopTime
-    db.close()
+    try:
+        db = shelve.open('database.db')
+        db['flowLiters'] = flowLiters
+        db['sprinklerInterval'] = sprinklerInterval # mins wait time to turn sprinkler on
+        db['sprinklerTime'] = sprinklerTime # mins of sprinkler to be turned on
+        db['minTemp'] = minTemp
+        db['startTime'] = startTime
+        db['stopTime'] = stopTime
+        db.close()
+    except Exception, e:
+        logging.debug("DB store exception: " + e)
 
 
 # ---------------- WEB ------------------
@@ -239,6 +248,13 @@ def send_flow():
         }
     emit('passFlow', msg)
 
+def webLoop(){
+    try:
+        socketio.run(app, '0.0.0.0')
+    except Exception, e:
+        logging.debug("web exception: " + e)
+}
+
 # ------------- Main ---------------
 
 if __name__=='__main__':
@@ -255,4 +271,4 @@ if __name__=='__main__':
     flowThread.start()
 
     while True: # to keep threads alive
-        time.sleep(1)
+        pass
