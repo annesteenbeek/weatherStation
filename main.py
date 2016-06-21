@@ -248,16 +248,11 @@ def send_flow():
         }
     emit('passFlow', msg)
 
-def webLoop():
-    try:
-        socketio.run(app, '0.0.0.0')
-    except Exception, e:
-        logging.debug("web exception: " + e)
-
 # ------------- Main ---------------
 
 if __name__=='__main__':
-    webThread = Thread(target=webloop)
+    webThread = Thread(target=socketio.run, args=(app, '0.0.0.0'))
+    Thread
     webThread.setDaemon(True)
     webThread.start()
 
