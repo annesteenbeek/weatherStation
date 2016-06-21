@@ -112,8 +112,8 @@ def switch_loop():
                 flowPinState = False
                 GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
                 time.sleep(1)
-            except Exception, e:
-                logging.debug("pin switch loop crashed because: " + e)
+        except Exception, e:
+            logging.debug("pin switch loop crashed because: " + e)
 
 # ------- Flow meter -----------
 
