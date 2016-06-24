@@ -12,7 +12,7 @@ import decimal
 import RPi.GPIO as GPIO
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(relativeCreated)6d %(threadName)s %(message)s')
+#logging.basicConfig(level=logging.DEBUG, filename="weatherlog.log")
 
 owm = pyowm.OWM('8cb7e0fcf5a41cd34812845fd6aa876e')  # from https://home.openweathermap.org/api_keys
 app = Flask(__name__)
@@ -92,15 +92,21 @@ def should_flow_start():
     get_weather()
     rain = weather.get_rain()
     temp = weather.get_temperature('celsius').get("temp")
-    hourOfDay = time.strftime("%H")
-
+    hourOfDay = float(time.strftime("%H"))
     if ((hourOfDay >= startTime) and (hourOfDay < stopTime)): # inside day range
         if (time.time() >= shutdownTime + sprinklerInterval * 60 ):
             #TODO make sure rain is about to fall within x minutes
             if (not rain): # make sure it's not already raining (or about to rain)
                 if (temp >= minTemp):
                     shutdownTime = time.time() + sprinklerTime * 60 # set new shutdown time in future
-
+                else: 
+                    print("not warm enough")
+            else:
+                print("it's raining")
+        else: 
+            print("it's not time yet")
+    else: 
+        print("not inside time range")
 def switch_loop():
     global flowPinState
     while True:
@@ -110,8 +116,8 @@ def switch_loop():
                 flowPinState = True
             else: 
                 flowPinState = False
-                GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
-                time.sleep(1)
+            GPIO.output(flowPin, not flowPinState) # inverse state because of inverting circuit
+            time.sleep(1)
         except Exception, e:
             logging.debug("pin switch loop crashed because: " + e)
 
@@ -198,7 +204,7 @@ def setSettings(msg):
       _minTemp = float(msg['minTemp'])
       _startTime = float(msg['startTime'])
       _stopTime = float(msg['stopTime'])
-      if _startTime < _stopTime and _startTime > 0 and _startTime <= 24 and _stopTime > 0 and _stopTime < 24:
+      if _startTime < _stopTime and _startTime >= 0 and _startTime <= 24 and _stopTime > 0 and _stopTime < 24:
         sprinklerInterval = _sprinklerInterval
         sprinklerTime = _sprinklerTime
         minTemp = _minTemp
@@ -251,8 +257,8 @@ def send_flow():
 # ------------- Main ---------------
 
 if __name__=='__main__':
+    app.debug = False
     webThread = Thread(target=socketio.run, args=(app, '0.0.0.0'))
-    Thread
     webThread.setDaemon(True)
     webThread.start()
 
